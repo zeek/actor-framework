@@ -20,7 +20,7 @@
 #include "caf/config.hpp"
 
 #define CAF_SUITE io_typed_broker
-#include "caf/test/unit_test.hpp"
+#include "caf/test/io_dsl.hpp"
 
 #include <memory>
 #include <iostream>
@@ -50,19 +50,20 @@ using ping_actor = typed_actor<replies_to<pong_atom, int>::with<ping_atom, int>>
 
 using pong_actor = typed_actor<replies_to<ping_atom, int>::with<pong_atom, int>>;
 
-behavior ping(event_based_actor* self, size_t num_pings) {
-  CAF_MESSAGE("num_pings: " << num_pings);
+behavior ping(event_based_actor* self, size_t num_pongs) {
+  CAF_MESSAGE("num_pongs: " << num_pongs);
   auto count = std::make_shared<size_t>(0);
   return {
     [=](kickoff_atom, const peer& pong) {
       CAF_MESSAGE("received `kickoff_atom`");
       self->send(pong, ping_atom::value, 1);
       self->become(
-        [=](pong_atom, int value) -> std::tuple<ping_atom, int> {
-          if (++*count >= num_pings) {
-            CAF_MESSAGE("received " << num_pings
-                        << " pings, call self->quit");
+        [=](pong_atom, int value) -> optional<std::tuple<ping_atom, int>> {
+          if (++*count >= num_pongs) {
+            CAF_MESSAGE("received " << num_pongs
+                        << " pongs, call self->quit");
             self->quit();
+            return none;
           }
           return std::make_tuple(ping_atom::value, value + 1);
         }
@@ -84,7 +85,7 @@ behavior pong(event_based_actor* self) {
       // set next behavior
       self->become(
         [](ping_atom, int val) {
-          //CAF_MESSAGE("received: 'ping', " << val);
+          CAF_MESSAGE("received: 'ping', " << val);
           return std::make_tuple(pong_atom::value, val);
         }
       );
@@ -94,49 +95,126 @@ behavior pong(event_based_actor* self) {
   };
 }
 
-peer::behavior_type peer_fun(peer::broker_pointer self, connection_handle hdl,
-                             const actor& buddy) {
+class peer_bhvr : public composable_behavior<peer> {
+public:
+  result<void> operator()(param<connection_closed_msg>) override {
+    CAF_MESSAGE("received connection_closed_msg");
+    self->quit();
+    return unit;
+  }
+
+  result<void> operator()(param<new_data_msg> msg) override {
+    CAF_MESSAGE("received new_data_msg");
+    atom_value x;
+    int y;
+    binary_deserializer source{self->system(), msg->buf};
+    auto e = source(x, y);
+    CAF_REQUIRE(!e);
+    if (x == pong_atom::value)
+      self->send(actor_cast<ping_actor>(buddy_), pong_atom::value, y);
+    else
+      self->send(actor_cast<pong_actor>(buddy_), ping_atom::value, y);
+    return unit;
+  }
+
+  result<void> operator()(ping_atom, int value) override {
+    CAF_MESSAGE("received: 'ping', " << value);
+    printf("%s %d - %s\n", __FILE__, __LINE__, deep_to_string(value).c_str());
+    write(ping_atom::value, value);
+    return unit;
+  }
+
+  result<void> operator()(pong_atom, int value) override {
+    CAF_MESSAGE("received: 'pong', " << value);
+    write(pong_atom::value, value);
+    return unit;
+  }
+
+  void init(peer::broker_pointer selfptr, const actor& buddy,
+            connection_handle hdl) {
+    self_ = selfptr;
+    buddy_ = buddy;
+    hdl_ = hdl;
+  }
+
+private:
+  void write(atom_value x, int y) {
+    auto& buf = self_->wr_buf(hdl_);
+    binary_serializer sink{self->system(), buf};
+    auto e = sink(x, y);
+    CAF_REQUIRE(!e);
+    printf("%s %d - %s\n", __FILE__, __LINE__, deep_to_string(buf).c_str());
+    self_->flush(hdl_);
+  }
+
+  peer::broker_pointer self_;
+  actor buddy_;
+  connection_handle hdl_;
+};
+
+peer::behavior_type
+peer_bhvr_impl(composable_behavior_based_actor<peer_bhvr, peer_bhvr::broker_base>* self,
+               connection_handle hdl, const actor& buddy) {
   CAF_MESSAGE("peer_fun called");
   self->monitor(buddy);
+  self->state.init(self, buddy, hdl);
   // assume exactly one connection
   CAF_REQUIRE_EQUAL(self->connections().size(), 1u);
   self->configure_read(
     hdl, receive_policy::exactly(sizeof(atom_value) + sizeof(int)));
-  auto write = [=](atom_value x, int y) {
-    auto& buf = self->wr_buf(hdl);
-    binary_serializer sink{self->system(), buf};
-    auto e = sink(x, y);
-    CAF_REQUIRE(!e);
-    self->flush(hdl);
-  };
   self->set_down_handler([=](down_msg& dm) {
     CAF_MESSAGE("received down_msg");
     if (dm.source == buddy)
       self->quit(std::move(dm.reason));
   });
+  return self->make_behavior();
+}
+
+peer::behavior_type peer_fun(peer::broker_pointer self, connection_handle hdl,
+                             const actor& buddy) {
+  CAF_MESSAGE("peer_fun called");
+  self->monitor(buddy);
+  // Assume exactly one connection.
+  CAF_REQUIRE_EQUAL(self->connections().size(), 1u);
+  constexpr size_t msg_size = sizeof(atom_value) + sizeof(int);
+  self->configure_read(hdl, receive_policy::exactly(msg_size));
+  auto write = [=](atom_value x, int y) {
+    auto& buf = self->wr_buf(hdl);
+    binary_serializer sink{self->system(), buf};
+    auto err = sink(x, y);
+    CAF_REQUIRE(!err);
+    self->flush(hdl);
+  };
+  self->set_down_handler([=](down_msg& dm) {
+    CAF_MESSAGE("broker received down_msg");
+    if (dm.source == buddy)
+      self->quit(std::move(dm.reason));
+  });
   return {
     [=](const connection_closed_msg&) {
-      CAF_MESSAGE("received connection_closed_msg");
+      CAF_MESSAGE("broker received connection_closed_msg");
       self->quit();
     },
-    [=](const new_data_msg& msg) {
-      CAF_MESSAGE("received new_data_msg");
+    //[=](const new_data_msg& msg) {
+    [=](param<new_data_msg> msg) -> result<void> {
+      CAF_MESSAGE("broker received new_data_msg");
       atom_value x;
       int y;
-      binary_deserializer source{self->system(), msg.buf};
+      binary_deserializer source{self->system(), msg->buf};
       auto e = source(x, y);
       CAF_REQUIRE(!e);
       if (x == pong_atom::value)
         self->send(actor_cast<ping_actor>(buddy), pong_atom::value, y);
       else
         self->send(actor_cast<pong_actor>(buddy), ping_atom::value, y);
+      return unit;
     },
     [=](ping_atom, int value) {
-      CAF_MESSAGE("received: 'ping', " << value);
+      CAF_MESSAGE("broker received ('ping', " << value << ")");
       write(ping_atom::value, value);
     },
     [=](pong_atom, int value) {
-      CAF_MESSAGE("received: 'pong', " << value);
+      CAF_MESSAGE("broker received ('pong', " << value << ")");
       write(pong_atom::value, value);
     }
   };
@@ -146,9 +224,10 @@ acceptor::behavior_type acceptor_fun(acceptor::broker_pointer self,
                                      const actor& buddy) {
   CAF_MESSAGE("peer_acceptor_fun");
   return {
-    [=](const new_connection_msg& msg) {
+    [=](param<new_connection_msg> msg) {
       CAF_MESSAGE("received `new_connection_msg`");
-      self->fork(peer_fun, msg.handle, buddy);
+      self->fork(peer_fun, msg->handle, buddy);
+      //self->fork(peer_bhvr_impl, msg->handle, buddy);
       self->quit();
     },
     [](const acceptor_closed_msg&) {
@@ -197,10 +276,61 @@ void run_server(int argc, char** argv) {
   child.join();
 }
 
+class remoting_config : public actor_system_config {
+public:
+  remoting_config() {
+    load<middleman, network::test_multiplexer>();
+    middleman_detach_utility_actors = false;
+  }
+};
+
+template <class T>
+T unwrap(expected<T> x) {
+  if (!x)
+    CAF_ERROR(to_string(x.error()));
+  return std::move(*x);
+}
+
 } // namespace <anonymous>
 
+CAF_TEST_FIXTURE_SCOPE(typed_brokers, point_to_point_fixture<remoting_config>)
+
 CAF_TEST(test_typed_broker) {
-  auto argc = test::engine::argc();
-  auto argv = test::engine::argv();
-  run_server(argc, argv);
+  constexpr const char* host = "earth";
+  constexpr uint16_t port = 8080u;
+  // Prepare connections.
+  prepare_connection(earth, mars, host, port);
+  // Spawn testees.
+  auto earth_pong = earth.sys.spawn(pong);
+  CAF_MESSAGE("spawn server on earth");
+  auto earth_server = unwrap(earth.mm.spawn_server(acceptor_fun, port,
+                                                   earth_pong));
+  auto mars_ping = mars.sys.spawn(ping, size_t{2});
+  CAF_MESSAGE("spawn client on mars");
+  auto mars_client = unwrap(mars.mm.spawn_client(peer_fun, host,
+                                                 port, mars_ping));
+  // Run any initialization code.
+  exec_all();
+  earth.mpx.accept_connection(earth.acc);
+  // Test sequence.
+  anon_send(mars_ping, kickoff_atom::value, mars_client);
+  expect_on(mars, (atom_value, peer),
+            from(_).to(mars_ping).with(kickoff_atom::value, mars_client));
+  network_traffic();
+  expect_on(earth, (atom_value, int),
+            from(_).to(earth_pong).with(ping_atom::value, 0));
+  network_traffic();
+  expect_on(mars, (atom_value, int),
+            from(_).to(mars_ping).with(pong_atom::value, 0));
+  network_traffic();
+  expect_on(earth, (atom_value, int),
+            from(_).to(earth_pong).with(ping_atom::value, 1));
+  network_traffic();
+  expect_on(mars, (atom_value, int),
+            from(_).to(mars_ping).with(pong_atom::value, 1));
+  network_traffic();
+  expect_on(earth, (down_msg),
+            from(_).to(earth_pong).with(_));
 }
+
+CAF_TEST_FIXTURE_SCOPE_END()
