@@ -106,24 +106,25 @@ sockaddr* ip_endpoint::address() {
   return reinterpret_cast<struct sockaddr*>(&ptr_->addr);
 }
 
-const sockaddr* ip_endpoint::caddress() const {
-  return reinterpret_cast<const struct sockaddr*>(&ptr_->addr);
-}
-
 size_t* ip_endpoint::length() {
   return &ptr_->len;
+}
+
+void ip_endpoint::clear() noexcept {
+  memset(&ptr_->addr, 0, sizeof(sockaddr_storage));
+  ptr_->len = 0;
+}
+
+const sockaddr* ip_endpoint::caddress() const {
+  return reinterpret_cast<const struct sockaddr*>(&ptr_->addr);
 }
 
 const size_t* ip_endpoint::clength() const {
   return &ptr_->len;
 }
 
-void ip_endpoint::clear() {
-  memset(&ptr_->addr, 0, sizeof(sockaddr_storage));
-  ptr_->len = 0;
-}
-
-void ip_endpoint::impl_deleter::operator()(ip_endpoint::impl *ptr) const {
+void ip_endpoint::impl_deleter::operator()(ip_endpoint::impl* ptr) const
+  noexcept {
   delete ptr;
 }
 
@@ -248,8 +249,8 @@ uint32_t family(const ip_endpoint& ep) {
   return ep.caddress()->sa_family;
 }
 
-error load_endpoint(ip_endpoint& ep, uint32_t& f, std::string& h,
-                    uint16_t& p, size_t& l) {
+error load_endpoint(ip_endpoint& ep, uint32_t f, const std::string& h,
+                    uint16_t p, size_t l) {
   ep.clear();
   if (l > 0) {
     *ep.length() = l;
@@ -271,22 +272,6 @@ error load_endpoint(ip_endpoint& ep, uint32_t& f, std::string& h,
       default:
         return sec::invalid_argument;
     }
-  }
-  return none;
-}
-
-error save_endpoint(ip_endpoint& ep, uint32_t& f, std::string& h,
-                    uint16_t& p, size_t& l) {
-  if (*ep.length() > 0) {
-    f = family(ep);
-    h = host(ep);
-    p = port(ep);
-    l = *ep.length();
-  } else {
-    f = 0;
-    h = "";
-    p = 0;
-    l = 0;
   }
   return none;
 }

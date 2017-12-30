@@ -54,63 +54,65 @@ public:
 /// A hashable wrapper for a sockaddr storage.
 struct ip_endpoint {
 public:
+  // -- constructors, destructors, and assignment operators --------------------
 
-  /// Default constructor for sockaddr storage which reserves memory for the
-  /// internal data structure on creation.
   ip_endpoint();
 
-  /// Move constructor.
   ip_endpoint(ip_endpoint&&) = default;
 
-  /// Copy constructor.
   ip_endpoint(const ip_endpoint&);
 
-  /// Destructor
   ~ip_endpoint() = default;
 
-  /// Copy assignment operator.
   ip_endpoint& operator=(const ip_endpoint&);
 
-  /// Move assignment operator.
   ip_endpoint& operator=(ip_endpoint&&) = default;
+
+  // -- modifiers --------------------------------------------------------------
 
   /// Returns a pointer to the internal address storage.
   sockaddr* address();
+
+  /// Returns the length of the stored address.
+  size_t* length();
+
+  /// Resets content and length.
+  void clear() noexcept;
+
+  // -- observers --------------------------------------------------------------
 
   /// Returns a constant pointer to the internal address storage.
   const sockaddr* caddress() const;
 
   /// Returns the length of the stored address.
-  size_t* length();
-
-  /// Returns the length of the stored address.
   const size_t* clength() const;
-
-  /// Null internal storage and length.
-  void clear();
 
 private:
   struct impl;
-  struct impl_deleter { void operator()(impl*) const; };
+  struct impl_deleter { void operator()(impl*) const noexcept; };
   std::unique_ptr<impl,impl_deleter> ptr_;
 };
 
+/// @relates ip_endpoint
 bool operator==(const ip_endpoint& lhs, const ip_endpoint& rhs);
 
+/// @relates ip_endpoint
 std::string to_string(const ip_endpoint& ep);
 
+/// @relates ip_endpoint
 std::string host(const ip_endpoint& ep);
 
+/// @relates ip_endpoint
 uint16_t port(const ip_endpoint& ep);
 
+/// @relates ip_endpoint
 uint32_t family(const ip_endpoint& ep);
 
-error load_endpoint(ip_endpoint& ep, uint32_t& f, std::string& h,
-                    uint16_t& p, size_t& l);
+/// @relates ip_endpoint
+error load_endpoint(ip_endpoint& ep, uint32_t f, const std::string& h,
+                    uint16_t p, size_t l);
 
-error save_endpoint(ip_endpoint& ep, uint32_t& f, std::string& h,
-                    uint16_t& p, size_t& l);
-
+/// @relates ip_endpoint
 template <class Inspector>
 typename Inspector::result_type inspect(Inspector& fun, ip_endpoint& ep) {
   uint32_t f;
@@ -122,11 +124,14 @@ typename Inspector::result_type inspect(Inspector& fun, ip_endpoint& ep) {
     h = host(ep);
     p = port(ep);
     l = *ep.length();
+  } else {
+    f = 0;
+    p = 0;
+    l = 0;
   }
   auto load = [&] { return load_endpoint(ep, f, h, p, l); };
-  auto save = [&] { return save_endpoint(ep, f, h, p, l); };
   return fun(meta::type_name("ip_endpoint"), f, h, p, l,
-             meta::load_callback(load), meta::save_callback(save));
+             meta::load_callback(load));
 }
 
 } // namespace network
