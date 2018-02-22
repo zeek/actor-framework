@@ -17,42 +17,43 @@ macro(add folder name)
 endmacro()
 
 # introductionary applications
-add(. aout)
+add(. simple_streaming)
+#add(. aout)
 add(. hello_world)
 
 # basic message passing primitives
-add(message_passing cell)
-add(message_passing divider)
-add(message_passing request)
-add(message_passing promises)
-add(message_passing calculator)
-add(message_passing delegating)
-add(message_passing fixed_stack)
-add(message_passing prioritizing)
-add(message_passing dancing_kirby)
+#add(message_passing cell)
+#add(message_passing divider)
+#add(message_passing request)
+#add(message_passing promises)
+#add(message_passing calculator)
+#add(message_passing delegating)
+#add(message_passing fixed_stack)
+#add(message_passing prioritizing)
+#add(message_passing dancing_kirby)
 
-# dynamic behavior changes using 'become'
-add(dynamic_behavior skip_messages)
-add(dynamic_behavior dining_philosophers)
+## dynamic behavior changes using 'become'
+#add(dynamic_behavior skip_messages)
+#add(dynamic_behavior dining_philosophers)
 
-# composing actors using states or other actors
-add(composition calculator_behavior)
-add(composition dictionary_behavior)
+## composing actors using states or other actors
+#add(composition calculator_behavior)
+#add(composition dictionary_behavior)
 
-# adding custom message types
-add(custom_type custom_types_1)
-add(custom_type custom_types_2)
-add(custom_type custom_types_3)
+## adding custom message types
+#add(custom_type custom_types_1)
+#add(custom_type custom_types_2)
+#add(custom_type custom_types_3)
 
-# basic remoting
-add(remoting group_chat)
-add(remoting group_server)
-add(remoting remote_spawn)
-add(remoting distributed_calculator)
+## basic remoting
+#add(remoting group_chat)
+#add(remoting group_server)
+#add(remoting remote_spawn)
+#add(remoting distributed_calculator)
 
-# basic I/O with brokers
-add(broker simple_broker)
-add(broker simple_http_broker)
+## basic I/O with brokers
+#add(broker simple_broker)
+#add(broker simple_http_broker)
 
 if(NOT CAF_NO_PROTOBUF_EXAMPLES)
   find_package(Protobuf)
