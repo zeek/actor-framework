@@ -197,6 +197,10 @@ actor_system_config::actor_system_config()
   error_renderers.emplace(atom("exit"), render_exit_reason);
 }
 
+void actor_system_config::finalize() {
+  // nop
+}
+
 std::string
 actor_system_config::make_help_text(const std::vector<message::cli_arg>& xs) {
   auto is_no_caf_option = [](const message::cli_arg& arg) {

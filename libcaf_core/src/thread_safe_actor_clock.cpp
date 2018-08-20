@@ -16,10 +16,9 @@
  * http://www.boost.org/LICENSE_1_0.txt.                                      *
  ******************************************************************************/
 
-#include "caf/detail/thread_safe_actor_clock.hpp"
+#include "caf/thread_safe_actor_clock.hpp"
 
 namespace caf {
-namespace detail {
 
 namespace {
 
@@ -31,10 +30,10 @@ thread_safe_actor_clock::thread_safe_actor_clock() : done_(false) {
   // nop
 }
 
-void thread_safe_actor_clock::set_ordinary_timeout(time_point t,
-                                                  abstract_actor* self,
-                                                  atom_value type,
-                                                  uint64_t id) {
+void thread_safe_actor_clock::set_ordinary_timeout(timestamp t,
+                                                   abstract_actor* self,
+                                                   atom_value type,
+                                                   uint64_t id) {
   guard_type guard{mx_};
   if (!done_) {
     super::set_ordinary_timeout(t, self, type, id);
@@ -42,7 +41,7 @@ void thread_safe_actor_clock::set_ordinary_timeout(time_point t,
   }
 }
 
-void thread_safe_actor_clock::set_request_timeout(time_point t,
+void thread_safe_actor_clock::set_request_timeout(timestamp t,
                                                   abstract_actor* self,
                                                   message_id id) {
   guard_type guard{mx_};
@@ -78,7 +77,7 @@ void thread_safe_actor_clock::cancel_timeouts(abstract_actor* self) {
   }
 }
 
-void thread_safe_actor_clock::schedule_message(time_point t,
+void thread_safe_actor_clock::schedule_message(timestamp t,
                                                strong_actor_ptr receiver,
                                                mailbox_element_ptr content) {
   guard_type guard{mx_};
@@ -88,7 +87,7 @@ void thread_safe_actor_clock::schedule_message(time_point t,
   }
 }
 
-void thread_safe_actor_clock::schedule_message(time_point t, group target,
+void thread_safe_actor_clock::schedule_message(timestamp t, group target,
                                                strong_actor_ptr sender,
                                                message content) {
   guard_type guard{mx_};
@@ -105,7 +104,20 @@ void thread_safe_actor_clock::cancel_all() {
   cv_.notify_all();
 }
 
-void thread_safe_actor_clock::run_dispatch_loop() {
+void thread_safe_actor_clock::start() {
+  worker_ = std::thread{[this] { run(); }};
+}
+
+void thread_safe_actor_clock::stop() {
+  { // Critical section.
+    guard_type guard{mx_};
+    done_ = true;
+    cv_.notify_all();
+  }
+  worker_.join();
+}
+
+void thread_safe_actor_clock::run() {
   visitor f{this};
   guard_type guard{mx_};
   while (done_ == false) {
@@ -129,11 +141,4 @@ void thread_safe_actor_clock::run_dispatch_loop() {
   schedule_.clear();
 }
 
-void thread_safe_actor_clock::cancel_dispatch_loop() {
-  guard_type guard{mx_};
-  done_ = true;
-  cv_.notify_all();
-}
-
-} // namespace detail
 } // namespace caf

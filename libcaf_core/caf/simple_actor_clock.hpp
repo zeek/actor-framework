@@ -29,8 +29,8 @@
 #include "caf/variant.hpp"
 
 namespace caf {
-namespace detail {
 
+/// A monotonic clock for managing actor-defined timeouts.
 class simple_actor_clock : public actor_clock {
 public:
   // -- member types -----------------------------------------------------------
@@ -64,7 +64,7 @@ public:
   using value_type = variant<ordinary_timeout, request_timeout,
                              actor_msg, group_msg>;
 
-  using map_type = std::multimap<time_point, value_type>;
+  using map_type = std::multimap<timestamp, value_type>;
 
   using secondary_map = std::multimap<abstract_actor*, map_type::iterator>;
 
@@ -90,10 +90,10 @@ public:
     void operator()(group_msg& x);
   };
 
-  void set_ordinary_timeout(time_point t, abstract_actor* self,
-                           atom_value type, uint64_t id) override;
+  void set_ordinary_timeout(timestamp t, abstract_actor* self,
+                            atom_value type, uint64_t id) override;
 
-  void set_request_timeout(time_point t, abstract_actor* self,
+  void set_request_timeout(timestamp t, abstract_actor* self,
                            message_id id) override;
 
   void cancel_ordinary_timeout(abstract_actor* self, atom_value type) override;
@@ -102,19 +102,19 @@ public:
 
   void cancel_timeouts(abstract_actor* self) override;
 
-  void schedule_message(time_point t, strong_actor_ptr receiver,
+  void schedule_message(timestamp t, strong_actor_ptr receiver,
                         mailbox_element_ptr content) override;
 
-  void schedule_message(time_point t, group target, strong_actor_ptr sender,
+  void schedule_message(timestamp t, group target, strong_actor_ptr sender,
                         message content) override;
 
   void cancel_all() override;
 
-  inline const map_type& schedule() const {
+  const map_type& schedule() const {
     return schedule_;
   }
 
-  inline const secondary_map& actor_lookup() const {
+  const secondary_map& actor_lookup() const {
     return actor_lookup_;
   }
 
@@ -153,6 +153,5 @@ protected:
   secondary_map actor_lookup_;
 };
 
-} // namespace detail
 } // namespace caf
 

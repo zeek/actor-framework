@@ -20,17 +20,14 @@
 
 #include <cstddef>
 
+#include "caf/detail/double_ended_queue.hpp"
+#include "caf/execution_unit.hpp"
+#include "caf/fwd.hpp"
 #include "caf/logger.hpp"
 #include "caf/resumable.hpp"
-#include "caf/execution_unit.hpp"
-
-#include "caf/detail/double_ended_queue.hpp"
 
 namespace caf {
 namespace scheduler {
-
-template <class Policy>
-class coordinator;
 
 /// Policy-based implementation of the abstract worker base class.
 template <class Policy>

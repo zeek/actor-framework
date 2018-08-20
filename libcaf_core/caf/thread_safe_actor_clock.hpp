@@ -18,25 +18,33 @@
 
 #pragma once
 
-#include <mutex>
 #include <atomic>
 #include <condition_variable>
+#include <mutex>
+#include <thread>
 
-#include "caf/detail/simple_actor_clock.hpp"
+#include "caf/simple_actor_clock.hpp"
 
 namespace caf {
-namespace detail {
 
+/// A thread-safe, monotonic clock with its own thread for managing timeouts.
 class thread_safe_actor_clock : public simple_actor_clock {
 public:
   using super = simple_actor_clock;
 
   thread_safe_actor_clock();
 
-  void set_ordinary_timeout(time_point t, abstract_actor* self,
-                           atom_value type, uint64_t id) override;
+  /// Starts the background thread of the clock.
+  virtual void start();
 
-  void set_request_timeout(time_point t, abstract_actor* self,
+  /// Stops the background thread of the clock and blocks until the worker
+  /// thread terminated.
+  virtual void stop();
+
+  void set_ordinary_timeout(timestamp t, abstract_actor* self,
+                            atom_value type, uint64_t id) override;
+
+  void set_request_timeout(timestamp t, abstract_actor* self,
                            message_id id) override;
 
   void cancel_ordinary_timeout(abstract_actor* self, atom_value type) override;
@@ -45,24 +53,22 @@ public:
 
   void cancel_timeouts(abstract_actor* self) override;
 
-  void schedule_message(time_point t, strong_actor_ptr receiver,
+  void schedule_message(timestamp t, strong_actor_ptr receiver,
                         mailbox_element_ptr content) override;
 
-  void schedule_message(time_point t, group target, strong_actor_ptr sender,
+  void schedule_message(timestamp t, group target, strong_actor_ptr sender,
                         message content) override;
 
   void cancel_all() override;
 
-  void run_dispatch_loop();
+protected:
+  void run();
 
-  void cancel_dispatch_loop();
-
-private:
   std::mutex mx_;
   std::condition_variable cv_;
   std::atomic<bool> done_;
+  std::thread worker_;
 };
 
-} // namespace detail
 } // namespace caf
 

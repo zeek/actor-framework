@@ -184,6 +184,15 @@ using receive_atom = atom_constant<atom("receive")>;
 /// Used as timeout type for `timeout_msg`.
 using stream_atom = atom_constant<atom("stream")>;
 
+/// Denotes the work-stealing policy.
+using stealing_atom = atom_constant<atom("stealing")>;
+
+/// Denotes the work-sharing policy.
+using sharing_atom = atom_constant<atom("sharing")>;
+
+/// Denotes the deterministic testing policy.
+using testing_atom = atom_constant<atom("testing")>;
+
 } // namespace caf
 
 namespace std {

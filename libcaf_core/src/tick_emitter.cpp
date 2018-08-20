@@ -25,13 +25,13 @@ namespace caf {
 namespace detail {
 
 tick_emitter::tick_emitter()
-    : start_(duration_type{0}),
+    : start_(timespan{0}),
       interval_(0),
       last_tick_id_(0) {
   // nop
 }
 
-tick_emitter::tick_emitter(time_point now) : tick_emitter() {
+tick_emitter::tick_emitter(timestamp now) : tick_emitter() {
   start(std::move(now));
 }
 
@@ -39,22 +39,22 @@ bool tick_emitter::started() const {
   return start_.time_since_epoch().count() != 0;
 }
 
-void tick_emitter::start(time_point now) {
+void tick_emitter::start(timestamp now) {
   CAF_LOG_TRACE(CAF_ARG(now));
   start_ = std::move(now);
 }
 
 void tick_emitter::stop() {
   CAF_LOG_TRACE("");
-  start_ = time_point{duration_type{0}};
+  start_ = timestamp{timespan{0}};
 }
 
-void tick_emitter::interval(duration_type x) {
+void tick_emitter::interval(timespan x) {
   CAF_LOG_TRACE(CAF_ARG(x));
   interval_ = x;
 }
 
-size_t tick_emitter::timeouts(time_point now,
+size_t tick_emitter::timeouts(timestamp now,
                               std::initializer_list<size_t> periods) {
   CAF_LOG_TRACE(CAF_ARG(now) << CAF_ARG(periods)
                 << CAF_ARG(interval_) << CAF_ARG(start_));
@@ -72,9 +72,8 @@ size_t tick_emitter::timeouts(time_point now,
   return result;
 }
 
-tick_emitter::time_point
-tick_emitter::next_timeout(time_point t,
-                           std::initializer_list<size_t> periods) {
+timestamp tick_emitter::next_timeout(timestamp t,
+                                     std::initializer_list<size_t> periods) {
   CAF_ASSERT(interval_.count() != 0);
   auto is_trigger = [&](size_t tick_id) {
     for (auto period : periods)

@@ -16,14 +16,13 @@
  * http://www.boost.org/LICENSE_1_0.txt.                                      *
  ******************************************************************************/
 
-#include "caf/detail/simple_actor_clock.hpp"
+#include "caf/simple_actor_clock.hpp"
 
 #include "caf/actor_cast.hpp"
 #include "caf/sec.hpp"
 #include "caf/system_messages.hpp"
 
 namespace caf {
-namespace detail {
 
 bool simple_actor_clock::ordinary_predicate::
 operator()(const secondary_map::value_type& x) const noexcept {
@@ -61,8 +60,8 @@ void simple_actor_clock::visitor::operator()(group_msg& x) {
                     std::move(x.content));
 }
 
-void simple_actor_clock::set_ordinary_timeout(time_point t, abstract_actor* self,
-                                             atom_value type, uint64_t id) {
+void simple_actor_clock::set_ordinary_timeout(timestamp t, abstract_actor* self,
+                                              atom_value type, uint64_t id) {
   ordinary_predicate pred{type};
   auto i = lookup(self, pred);
   auto sptr = actor_cast<strong_actor_ptr>(self);
@@ -76,7 +75,7 @@ void simple_actor_clock::set_ordinary_timeout(time_point t, abstract_actor* self
   }
 }
 
-void simple_actor_clock::set_request_timeout(time_point t, abstract_actor* self,
+void simple_actor_clock::set_request_timeout(timestamp t, abstract_actor* self,
                                              message_id id) {
   request_predicate pred{id};
   auto i = lookup(self, pred);
@@ -112,13 +111,13 @@ void simple_actor_clock::cancel_timeouts(abstract_actor* self) {
   actor_lookup_.erase(range.first, range.second);
 }
 
-void simple_actor_clock::schedule_message(time_point t,
+void simple_actor_clock::schedule_message(timestamp t,
                                           strong_actor_ptr receiver,
                                           mailbox_element_ptr content) {
   schedule_.emplace(t, actor_msg{std::move(receiver), std::move(content)});
 }
 
-void simple_actor_clock::schedule_message(time_point t, group target,
+void simple_actor_clock::schedule_message(timestamp t, group target,
                                           strong_actor_ptr sender,
                                           message content) {
   schedule_.emplace(
@@ -130,5 +129,4 @@ void simple_actor_clock::cancel_all() {
   schedule_.clear();
 }
 
-} // namespace detail
 } // namespace caf

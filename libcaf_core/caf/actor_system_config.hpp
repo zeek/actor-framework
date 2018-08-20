@@ -110,6 +110,14 @@ public:
     return set_impl(name, config_value{std::forward<T>(value)});
   }
 
+  // -- customization points ---------------------------------------------------
+
+  /// Called by the `actor_system` before using the config for initialization.
+  /// Overriding this member function allows to make use of user-defined
+  /// settings from configuration files, subclasses, etc., before loading
+  /// dependant modules.
+  virtual void finalize();
+
   // -- modifiers --------------------------------------------------------------
 
   /// Parses `args` as tuple of strings containing CLI options

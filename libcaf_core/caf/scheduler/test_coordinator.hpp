@@ -25,10 +25,10 @@
 #include <algorithm>
 
 #include "caf/config.hpp"
-#include "caf/detail/test_actor_clock.hpp"
 #include "caf/raise_error.hpp"
 #include "caf/scheduled_actor.hpp"
 #include "caf/scheduler/abstract_coordinator.hpp"
+#include "caf/test_actor_clock.hpp"
 
 namespace caf {
 namespace scheduler {
@@ -140,7 +140,7 @@ public:
 
   bool detaches_utility_actors() const override;
 
-  detail::test_actor_clock& clock() noexcept override;
+  test_actor_clock& clock() noexcept override;
 
   std::pair<size_t, size_t>
   run_dispatch_loop(timespan cycle_duration = timespan{1})
@@ -157,7 +157,7 @@ private:
   void inline_all_enqueues_helper();
 
   /// Allows users to fake time at will.
-  detail::test_actor_clock clock_;
+  test_actor_clock clock_;
 
   /// User-provided callback for triggering custom code in `enqueue`.
   std::function<void()> after_next_enqueue_;

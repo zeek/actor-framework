@@ -18,21 +18,21 @@
 
 #pragma once
 
-#include "caf/detail/simple_actor_clock.hpp"
+#include "caf/simple_actor_clock.hpp"
 
 namespace caf {
-namespace detail {
 
+/// A trivial actor clock for unit testing.
 class test_actor_clock : public simple_actor_clock {
 public:
-  time_point current_time;
+  timestamp current_time;
 
   test_actor_clock();
 
-  time_point now() const noexcept override;
+  timestamp now() const noexcept override;
 
-  duration_type difference(atom_value measurement, long units, time_point t0,
-                           time_point t1) const noexcept override;
+  timespan difference(atom_value measurement, long units, timestamp t0,
+                      timestamp t1) const noexcept override;
 
   /// Returns whether the actor clock has at least one pending timeout.
   bool has_pending_timeout() const {
@@ -57,15 +57,14 @@ public:
 
   /// Advances the time by `x` and dispatches timeouts and delayed messages.
   /// @returns The number of triggered timeouts.
-  size_t advance_time(duration_type x);
+  size_t advance_time(timespan x);
 
   /// Configures the returned value for `difference`. For example, inserting
   /// `('foo', 120ns)` causes the clock to return `units * 120ns` for any call
   /// to `difference` with `measurement == 'foo'` regardless of the time points
   /// passed to the function.
-  std::map<atom_value, duration_type> time_per_unit;
+  std::map<atom_value, timespan> time_per_unit;
 };
 
-} // namespace detail
 } // namespace caf
 

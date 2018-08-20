@@ -25,10 +25,9 @@
 #include <memory>
 #include <condition_variable>
 
-#include "caf/scheduler/worker.hpp"
 #include "caf/scheduler/abstract_coordinator.hpp"
-
-#include "caf/detail/thread_safe_actor_clock.hpp"
+#include "caf/scheduler/worker.hpp"
+#include "caf/thread_safe_actor_clock.hpp"
 
 namespace caf {
 namespace scheduler {
@@ -55,8 +54,19 @@ public:
     return data_;
   }
 
+  template <class Clock>
+  static actor_system::module* make(actor_system& sys,
+                                    detail::type_list<Clock>) {
+    return new coordinator_impl<coordinator, Clock>(sys);
+  }
+
+  static actor_system::module* make(actor_system& sys) {
+    detail::type_list<thread_safe_actor_clock> token;
+    return make(sys, token);
+  }
+
   static actor_system::module* make(actor_system& sys, detail::type_list<>) {
-    return new coordinator(sys);
+    return make(sys);
   }
 
 protected:
@@ -72,11 +82,6 @@ protected:
     // Start all workers.
     for (auto& w : workers_)
       w->start();
-    // Launch an additional background thread for dispatching timeouts and
-    // delayed messages.
-    timer_ = std::thread{[&] {
-      clock_.run_dispatch_loop();
-    }};
     // Run remaining startup code.
     super::start();
   }
@@ -136,23 +141,13 @@ protected:
     for (auto& w : workers_)
       policy_.foreach_resumable(w.get(), f);
     policy_.foreach_central_resumable(this, f);
-    // stop timer thread
-    clock_.cancel_dispatch_loop();
-    timer_.join();
   }
 
   void enqueue(resumable* ptr) override {
     policy_.central_enqueue(this, ptr);
   }
 
-  detail::thread_safe_actor_clock& clock() noexcept override {
-    return clock_;
-  }
-
-private:
-  /// System-wide clock.
-  detail::thread_safe_actor_clock clock_;
-
+protected:
   /// Set of workers.
   std::vector<std::unique_ptr<worker_type>> workers_;
 
@@ -161,9 +156,6 @@ private:
 
   /// The policy object.
   Policy policy_;
-
-  /// Thread for managing timeouts and delayed messages.
-  std::thread timer_;
 };
 
 } // namespace scheduler

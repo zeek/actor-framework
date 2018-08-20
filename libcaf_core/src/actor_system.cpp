@@ -22,18 +22,17 @@
 
 #include "caf/actor_system_config.hpp"
 #include "caf/event_based_actor.hpp"
-#include "caf/raise_error.hpp"
-#include "caf/raw_event_based_actor.hpp"
-#include "caf/send.hpp"
-#include "caf/to_string.hpp"
-
 #include "caf/policy/work_sharing.hpp"
 #include "caf/policy/work_stealing.hpp"
-
-#include "caf/scheduler/coordinator.hpp"
-#include "caf/scheduler/test_coordinator.hpp"
+#include "caf/raise_error.hpp"
+#include "caf/raw_event_based_actor.hpp"
 #include "caf/scheduler/abstract_coordinator.hpp"
+#include "caf/scheduler/coordinator.hpp"
 #include "caf/scheduler/profiled_coordinator.hpp"
+#include "caf/scheduler/test_coordinator.hpp"
+#include "caf/send.hpp"
+#include "caf/thread_safe_actor_clock.hpp"
+#include "caf/to_string.hpp"
 
 namespace caf {
 
@@ -215,6 +214,7 @@ actor_system::actor_system(actor_system_config& cfg)
       cfg_(cfg),
       logger_dtor_done_(false) {
   CAF_SET_LOGGER_SYS(this);
+  cfg.finalize();
   for (auto& hook : cfg.thread_hooks_)
     hook->init(*this);
   for (auto& f : cfg.module_factories) {
@@ -222,52 +222,30 @@ actor_system::actor_system(actor_system_config& cfg)
     modules_[mod_ptr->id()].reset(mod_ptr);
   }
   auto& sched = modules_[module::scheduler];
-  using namespace scheduler;
-  using policy::work_sharing;
-  using policy::work_stealing;
-  using share = coordinator<work_sharing>;
-  using steal = coordinator<work_stealing>;
-  using profiled_share = profiled_coordinator<policy::profiled<work_sharing>>;
-  using profiled_steal = profiled_coordinator<policy::profiled<work_stealing>>;
-  // set scheduler only if not explicitly loaded by user
+  // Set scheduler only if not explicitly loaded by user.
   if (!sched) {
-    enum sched_conf {
-      stealing          = 0x0001,
-      sharing           = 0x0002,
-      testing           = 0x0003,
-      profiled          = 0x0100,
-      profiled_stealing = 0x0101,
-      profiled_sharing  = 0x0102
-    };
-    sched_conf sc = stealing;
-    namespace sr = defaults::scheduler;
-    auto sr_policy = get_or(cfg, "scheduler.policy", sr::policy);
-    if (sr_policy == atom("sharing"))
-      sc = sharing;
-    else if (sr_policy == atom("testing"))
-      sc = testing;
-    else if (sr_policy != atom("stealing"))
-      std::cerr << "[WARNING] " << deep_to_string(sr_policy)
-                << " is an unrecognized scheduler pollicy, "
-                   "falling back to 'stealing' (i.e. work-stealing)"
-                << std::endl;
-    if (get_or(cfg, "scheduler.enable-profiling", false))
-      sc = static_cast<sched_conf>(sc | profiled);
-    switch (sc) {
-      default: // any invalid configuration falls back to work stealing
-        sched.reset(new steal(*this));
+    auto profiled = get_or(cfg, "scheduler.enable-profiling", false);
+    auto pname = get_or(cfg, "scheduler.policy", defaults::scheduler::policy);
+    using namespace scheduler;
+    using steal = policy::work_stealing;
+    using share = policy::work_sharing;
+    switch (atom_uint(pname)) {
+      default:
+        std::cerr << "[WARNING] " << deep_to_string(pname)
+                  << " is an unrecognized scheduler pollicy, "
+                     "falling back to 'stealing'"
+                  << std::endl;
+        // Falls through.
+      case stealing_atom::uint_value():
+        sched.reset(profiled ? profiled_coordinator<steal>::make(*this)
+                             : coordinator<steal>::make(*this));
         break;
-      case sharing:
-        sched.reset(new share(*this));
+      case sharing_atom::uint_value():
+        sched.reset(profiled ? profiled_coordinator<share>::make(*this)
+                             : coordinator<share>::make(*this));
         break;
-      case profiled_stealing:
-        sched.reset(new profiled_steal(*this));
-        break;
-      case profiled_sharing:
-        sched.reset(new profiled_share(*this));
-        break;
-      case testing:
-        sched.reset(new test_coordinator(*this));
+      case testing_atom::uint_value():
+        sched.reset(new scheduler::test_coordinator(*this));
     }
   }
   // initialize state for each module and give each module the opportunity

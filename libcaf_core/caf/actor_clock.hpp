@@ -21,23 +21,14 @@
 #include <chrono>
 
 #include "caf/fwd.hpp"
+#include "caf/timespan.hpp"
+#include "caf/timestamp.hpp"
 
 namespace caf {
 
 /// A monotonic clock for scheduling timeouts and delayed messages.
 class actor_clock {
 public:
-  // -- member types -----------------------------------------------------------
-
-  /// Underlying clock type.
-  using clock_type = std::chrono::steady_clock;
-
-  /// Discrete point in time.
-  using time_point = typename clock_type::time_point;
-
-  /// Difference between two points in time.
-  using duration_type = typename clock_type::duration;
-
   // -- constructors, destructors, and assignment operators --------------------
 
   virtual ~actor_clock();
@@ -45,21 +36,21 @@ public:
   // -- observers --------------------------------------------------------------
 
   /// Returns the current wall-clock time.
-  virtual time_point now() const noexcept;
+  virtual timestamp now() const noexcept;
 
   /// Returns the difference between `t0` and `t1`, allowing the clock to
   /// return an arbitrary value depending on the measurement that took place
   /// and the units measured.
-  virtual duration_type difference(atom_value measurement, long units,
-                                   time_point t0, time_point t1) const noexcept;
+  virtual timespan difference(atom_value measurement, long units, timestamp t0,
+                              timestamp t1) const noexcept;
 
   /// Schedules a `timeout_msg` for `self` at time point `t`, overriding any
   /// previous receive timeout.
-  virtual void set_ordinary_timeout(time_point t, abstract_actor* self,
-                                   atom_value type, uint64_t id) = 0;
+  virtual void set_ordinary_timeout(timestamp t, abstract_actor* self,
+                                    atom_value type, uint64_t id) = 0;
 
   /// Schedules a `sec::request_timeout` for `self` at time point `t`.
-  virtual void set_request_timeout(time_point t, abstract_actor* self,
+  virtual void set_request_timeout(timestamp t, abstract_actor* self,
                                    message_id id) = 0;
 
   /// Cancels a pending receive timeout.
@@ -73,11 +64,11 @@ public:
   virtual void cancel_timeouts(abstract_actor* self) = 0;
 
   /// Schedules an arbitrary message to `receiver` for time point `t`.
-  virtual void schedule_message(time_point t, strong_actor_ptr receiver,
+  virtual void schedule_message(timestamp t, strong_actor_ptr receiver,
                                 mailbox_element_ptr content) = 0;
 
   /// Schedules an arbitrary message to `target` for time point `t`.
-  virtual void schedule_message(time_point t, group target,
+  virtual void schedule_message(timestamp t, group target,
                                 strong_actor_ptr sender, message content) = 0;
 
   /// Cancels all timeouts and scheduled messages.

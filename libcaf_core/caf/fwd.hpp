@@ -222,6 +222,9 @@ class abstract_worker;
 class test_coordinator;
 class abstract_coordinator;
 
+template <class Policy>
+class coordinator;
+
 } // namespace scheduler
 
 

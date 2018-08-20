@@ -44,8 +44,6 @@ using std::vector;
 
 using namespace caf;
 
-using time_point = caf::detail::tick_emitter::time_point;
-
 namespace {
 
 timespan credit_interval{200};
@@ -55,9 +53,9 @@ timespan force_batch_interval{50};
 
 CAF_TEST(start_and_stop) {
   detail::tick_emitter x;
-  detail::tick_emitter y{time_point{timespan{100}}};
+  detail::tick_emitter y{timestamp{timespan{100}}};
   detail::tick_emitter z;
-  z.start(time_point{timespan{100}});
+  z.start(timestamp{timespan{100}});
   CAF_CHECK_EQUAL(x.started(), false);
   CAF_CHECK_EQUAL(y.started(), true);
   CAF_CHECK_EQUAL(z.started(), true);
@@ -75,7 +73,7 @@ CAF_TEST(ticks) {
   auto force_batch_frequency =
     static_cast<size_t>(force_batch_interval.count() / cycle);
   auto credit_frequency = static_cast<size_t>(credit_interval.count() / cycle);
-  detail::tick_emitter tctrl{time_point{timespan{100}}};
+  detail::tick_emitter tctrl{timestamp{timespan{100}}};
   tctrl.interval(timespan{cycle});
   vector<size_t> ticks;
   size_t force_batch_triggers = 0;
@@ -88,12 +86,12 @@ CAF_TEST(ticks) {
       ++credit_triggers;
   };
   CAF_MESSAGE("trigger 4 ticks");
-  tctrl.update(time_point{timespan{300}}, f);
+  tctrl.update(timestamp{timespan{300}}, f);
   CAF_CHECK_EQUAL(deep_to_string(ticks), "[1, 2, 3, 4]");
   CAF_CHECK_EQUAL(force_batch_triggers, 4lu);
   CAF_CHECK_EQUAL(credit_triggers, 1lu);
   CAF_MESSAGE("trigger 3 more ticks");
-  tctrl.update(time_point{timespan{475}}, f);
+  tctrl.update(timestamp{timespan{475}}, f);
   CAF_CHECK_EQUAL(deep_to_string(ticks), "[1, 2, 3, 4, 5, 6, 7]");
   CAF_CHECK_EQUAL(force_batch_triggers, 7lu);
   CAF_CHECK_EQUAL(credit_triggers, 1lu);
@@ -101,7 +99,7 @@ CAF_TEST(ticks) {
 
 CAF_TEST(timeouts) {
   timespan interval{50};
-  time_point start{timespan{100}};
+  timestamp start{timespan{100}};
   auto now = start;
   detail::tick_emitter tctrl{now};
   tctrl.interval(interval);
@@ -129,7 +127,7 @@ CAF_TEST(timeouts) {
 
 CAF_TEST(next_timeout) {
   timespan interval{50};
-  time_point start{timespan{100}};
+  timestamp start{timespan{100}};
   auto now = start;
   detail::tick_emitter tctrl{now};
   tctrl.interval(interval);

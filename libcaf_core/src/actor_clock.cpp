@@ -28,13 +28,12 @@ actor_clock::~actor_clock() {
 
 // -- observers ----------------------------------------------------------------
 
-actor_clock::time_point actor_clock::now() const noexcept {
-  return clock_type::now();
+timestamp actor_clock::now() const noexcept {
+  return make_timestamp();
 }
 
-actor_clock::duration_type
-actor_clock::difference(atom_value, long, time_point t0,
-                        time_point t1) const noexcept {
+timespan actor_clock::difference(atom_value, long, timestamp t0,
+                                 timestamp t1) const noexcept {
   return t1 - t0;
 }
 

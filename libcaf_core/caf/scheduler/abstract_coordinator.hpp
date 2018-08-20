@@ -22,15 +22,16 @@
 #include <atomic>
 #include <cstddef>
 
-#include "caf/fwd.hpp"
-#include "caf/atom.hpp"
 #include "caf/actor.hpp"
-#include "caf/message.hpp"
-#include "caf/duration.hpp"
 #include "caf/actor_addr.hpp"
 #include "caf/actor_cast.hpp"
 #include "caf/actor_clock.hpp"
 #include "caf/actor_system.hpp"
+#include "caf/atom.hpp"
+#include "caf/duration.hpp"
+#include "caf/fwd.hpp"
+#include "caf/message.hpp"
+#include "caf/thread_safe_actor_clock.hpp"
 
 namespace caf {
 namespace scheduler {
@@ -107,7 +108,33 @@ protected:
 
   /// Reference to the host system.
   actor_system& system_;
+};
 
+/// Adds a clock to `Base` coordinator to fully implement the coordinator
+/// interface.
+template <class Base, class Clock>
+class coordinator_impl : public Base {
+public:
+  using super = Base;
+
+  using super::super;
+
+  Clock& clock() noexcept override {
+    return clock_;
+  }
+
+protected:
+  void start() override {
+    clock_.start();
+    super::start();
+  }
+
+  void stop() override {
+    super::stop();
+    clock_.stop();
+  }
+
+  Clock clock_;
 };
 
 } // namespace scheduler

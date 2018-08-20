@@ -74,7 +74,7 @@ bool test_coordinator::detaches_utility_actors() const {
   return false;
 }
 
-detail::test_actor_clock& test_coordinator::clock() noexcept {
+test_actor_clock& test_coordinator::clock() noexcept {
   return clock_;
 }
 

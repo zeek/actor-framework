@@ -43,6 +43,7 @@
 #include "caf/policy/profiled.hpp"
 #include "caf/policy/work_stealing.hpp"
 #include "caf/scheduler/coordinator.hpp"
+#include "caf/thread_safe_actor_clock.hpp"
 
 namespace caf {
 namespace scheduler {
@@ -189,6 +190,21 @@ public:
     auto res = get_or(cfg, "scheduler.profiling-resolution",
                       sr::profiling_resolution);
     resolution_ = std::chrono::duration_cast<msec>(res);
+  }
+
+  template <class Clock>
+  static actor_system::module* make(actor_system& sys,
+                                    detail::type_list<Clock>) {
+    return new coordinator_impl<profiled_coordinator, Clock>(sys);
+  }
+
+  static actor_system::module* make(actor_system& sys) {
+    detail::type_list<thread_safe_actor_clock> token;
+    return make(sys, token);
+  }
+
+  static actor_system::module* make(actor_system& sys, detail::type_list<>) {
+    return make(sys);
   }
 
   void start() override {

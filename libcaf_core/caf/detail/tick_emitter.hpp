@@ -23,6 +23,8 @@
 #include <initializer_list>
 
 #include "caf/config.hpp"
+#include "caf/timespan.hpp"
+#include "caf/timestamp.hpp"
 
 namespace caf {
 namespace detail {
@@ -32,43 +34,32 @@ namespace detail {
 /// timespan of 25ms generates a tick every 25ms after starting it.
 class tick_emitter {
 public:
-  // -- member types -----------------------------------------------------------
-
-  /// Discrete point in time.
-  using clock_type = std::chrono::steady_clock;
-
-  /// Discrete point in time.
-  using time_point = typename clock_type::time_point;
-
-  /// Difference between two points in time.
-  using duration_type = typename time_point::duration;
-
   // -- constructors, destructors, and assignment operators --------------------
 
   tick_emitter();
 
-  tick_emitter(time_point now);
+  tick_emitter(timestamp now);
 
   /// Queries whether the start time is non-default constructed.
   bool started() const;
 
   /// Configures the start time.
-  void start(time_point now);
+  void start(timestamp now);
 
   /// Resets the start time to 0.
   void stop();
 
   /// Configures the time interval per tick.
-  void interval(duration_type x);
+  void interval(timespan x);
 
   /// Returns the time interval per tick.
-  inline duration_type interval() const {
+  inline timespan interval() const {
     return interval_;
   }
 
   /// Advances time and calls `consumer` for each emitted tick.
   template <class F>
-  void update(time_point now, F& consumer) {
+  void update(timestamp now, F& consumer) {
     CAF_ASSERT(interval_.count() != 0);
     auto d = now - start_;
     auto current_tick_id = static_cast<size_t>(d.count() / interval_.count());
@@ -77,16 +68,16 @@ public:
   }
 
   /// Advances time by `t` and returns all triggered periods as bitmask.
-  size_t timeouts(time_point t, std::initializer_list<size_t> periods);
+  size_t timeouts(timestamp t, std::initializer_list<size_t> periods);
 
   /// Returns the next time point after `t` that would trigger any of the tick
   /// periods, i.e., returns the next time where any of the tick periods
   /// triggers `tick id % period == 0`.
-  time_point next_timeout(time_point t, std::initializer_list<size_t> periods);
+  timestamp next_timeout(timestamp t, std::initializer_list<size_t> periods);
 
 private:
-  time_point start_;
-  duration_type interval_;
+  timestamp start_;
+  timespan interval_;
   size_t last_tick_id_;
 };
 

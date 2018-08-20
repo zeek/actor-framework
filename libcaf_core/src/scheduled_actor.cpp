@@ -362,7 +362,7 @@ scheduled_actor::resume(execution_unit* ctx, size_t max_throughput) {
   if (!activate(ctx))
     return resumable::done;
   size_t handled_msgs = 0;
-  actor_clock::time_point tout{actor_clock::duration_type{0}};
+  timestamp tout{timespan{0}};
   auto reset_timeouts_if_needed = [&] {
     // Set a new receive timeout if we called our behavior at least once.
     if (handled_msgs > 0)
@@ -420,7 +420,7 @@ void scheduled_actor::quit(error x) {
 
 // -- timeout management -------------------------------------------------------
 
-uint64_t scheduled_actor::set_receive_timeout(actor_clock::time_point x) {
+uint64_t scheduled_actor::set_receive_timeout(timestamp x) {
   CAF_LOG_TRACE(x);
   setf(has_timeout_flag);
   return set_timeout(receive_atom::value, x);
@@ -456,10 +456,10 @@ bool scheduled_actor::is_active_receive_timeout(uint64_t tid) const {
   return getf(has_timeout_flag) && timeout_id_ == tid;
 }
 
-uint64_t scheduled_actor::set_stream_timeout(actor_clock::time_point x) {
+uint64_t scheduled_actor::set_stream_timeout(timestamp x) {
   CAF_LOG_TRACE(x);
   // Do not request 'infinite' timeouts.
-  if (x == actor_clock::time_point::max()) {
+  if (x == timestamp::max()) {
     CAF_LOG_DEBUG("drop infinite timeout");
     return 0;
   }
@@ -912,8 +912,7 @@ void scheduled_actor::handle_upstream_msg(stream_slots slots,
   ptr->handle(slots, x);
 }
 
-uint64_t scheduled_actor::set_timeout(atom_value type,
-                                      actor_clock::time_point x) {
+uint64_t scheduled_actor::set_timeout(atom_value type, timestamp x) {
   CAF_LOG_TRACE(CAF_ARG(type) << CAF_ARG(x));
   auto id = ++timeout_id_;
   CAF_LOG_DEBUG("set timeout:" << CAF_ARG(type) << CAF_ARG(x));
@@ -1085,12 +1084,11 @@ scheduled_actor::handle_open_stream_msg(mailbox_element& x) {
   }
 }
 
-actor_clock::time_point
-scheduled_actor::advance_streams(actor_clock::time_point now) {
+timestamp scheduled_actor::advance_streams(timestamp now) {
   CAF_LOG_TRACE("");
   if (!stream_ticks_.started()) {
     CAF_LOG_DEBUG("tick emitter not started yet");
-    return actor_clock::time_point::max();
+    return timestamp::max();
   }
   /// Advance time for driving forced batches and credit.
   auto bitmask = stream_ticks_.timeouts(now, {max_batch_delay_ticks_,

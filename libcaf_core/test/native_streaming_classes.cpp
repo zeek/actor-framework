@@ -51,6 +51,8 @@
 #include "caf/stream_source_driver.hpp"
 #include "caf/stream_stage_driver.hpp"
 #include "caf/system_messages.hpp"
+#include "caf/timespan.hpp"
+#include "caf/timestamp.hpp"
 #include "caf/upstream_msg.hpp"
 #include "caf/variant.hpp"
 
@@ -154,26 +156,17 @@ public:
   using behavior_type = behavior;
 
   /// The type of a single tick.
-  using clock_type = detail::tick_emitter::clock_type;
-
-  /// The type of a single tick.
-  using time_point = clock_type::time_point;
-
-  /// Difference between two points in time.
-  using duration_type = time_point::duration;
-
-  /// The type of a single tick.
   using tick_type = size_t;
 
   // -- constructors, destructors, and assignment operators --------------------
 
-  entity(actor_config& cfg, const char* cstr_name, time_point* global_time,
-         duration_type credit_interval, duration_type force_batches_interval)
+  entity(actor_config& cfg, const char* cstr_name, timestamp* global_time,
+         timespan credit_interval, timespan force_batches_interval)
       : super(cfg),
         mbox(unit, unit, unit, unit, unit),
         name_(cstr_name),
         global_time_(global_time),
-        tick_emitter_(global_time == nullptr ? clock_type::now()
+        tick_emitter_(global_time == nullptr ? make_timestamp()
                                              : *global_time) {
     auto cycle = detail::gcd(credit_interval.count(),
                              force_batches_interval.count());
@@ -181,7 +174,7 @@ public:
       static_cast<size_t>(force_batches_interval.count() / cycle);
     ticks_per_credit_interval =
       static_cast<size_t>(credit_interval.count() / cycle);
-    tick_emitter_.interval(duration_type{cycle});
+    tick_emitter_.interval(timespan{cycle});
   }
 
   void enqueue(mailbox_element_ptr what, execution_unit*) override {
@@ -375,8 +368,8 @@ public:
     CAF_FAIL("unexpected function call");
   }
 
-  time_point now() {
-    return global_time_ == nullptr ? clock_type::now() : *global_time_;
+  timestamp now() {
+    return global_time_ == nullptr ? make_timestamp() : *global_time_;
   }
 
   // -- member variables -------------------------------------------------------
@@ -388,7 +381,7 @@ public:
 
   tick_type ticks_per_force_batches_interval;
   tick_type ticks_per_credit_interval;
-  time_point* global_time_;
+  timestamp* global_time_;
   detail::tick_emitter tick_emitter_;
 };
 

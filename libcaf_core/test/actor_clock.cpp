@@ -25,8 +25,6 @@
 #include <memory>
 
 #include "caf/all.hpp"
-#include "caf/detail/test_actor_clock.hpp"
-#include "caf/raw_event_based_actor.hpp"
 
 using namespace caf;
 
@@ -39,7 +37,7 @@ struct testee_state {
 };
 
 behavior testee(stateful_actor<testee_state, raw_event_based_actor>* self,
-                detail::test_actor_clock* t) {
+                test_actor_clock* t) {
   return {
     [=](ok_atom) {
       auto n = t->now() + seconds(10);
@@ -71,7 +69,7 @@ behavior testee(stateful_actor<testee_state, raw_event_based_actor>* self,
 }
 
 struct fixture : test_coordinator_fixture<> {
-  detail::test_actor_clock t;
+  test_actor_clock t;
   actor aut;
 
   fixture() : aut(sys.spawn<lazy_init>(testee, &t)) {

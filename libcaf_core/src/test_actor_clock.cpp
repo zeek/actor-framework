@@ -16,30 +16,29 @@
  * http://www.boost.org/LICENSE_1_0.txt.                                      *
  ******************************************************************************/
 
-#include "caf/detail/test_actor_clock.hpp"
+#include "caf/test_actor_clock.hpp"
 
 #include "caf/logger.hpp"
 
 namespace caf {
-namespace detail {
 
-test_actor_clock::test_actor_clock() : current_time(duration_type{1}) {
+test_actor_clock::test_actor_clock() : current_time(timespan{1}) {
   // This ctor makes sure that the clock isn't at the default-constructed
-  // time_point, because that value has special meaning (for the tick_emitter,
+  // timestamp, because that value has special meaning (for the tick_emitter,
   // for example).
 }
 
-test_actor_clock::time_point test_actor_clock::now() const noexcept {
+timestamp test_actor_clock::now() const noexcept {
   return current_time;
 }
 
-test_actor_clock::duration_type
-test_actor_clock::difference(atom_value measurement, long units, time_point t0,
-                             time_point t1) const noexcept {
+timespan test_actor_clock::difference(atom_value measurement, long units,
+                                      timestamp t0,
+                                      timestamp t1) const noexcept {
   auto i = time_per_unit.find(measurement);
   if (i != time_per_unit.end())
     return units * i->second;
-  return t0 == t1 ? duration_type{1} : t1 - t0;
+  return t0 == t1 ? timespan{1} : t1 - t0;
 }
 
 bool test_actor_clock::trigger_timeout() {
@@ -85,12 +84,11 @@ size_t test_actor_clock::trigger_expired_timeouts() {
   return result;
 }
 
-size_t test_actor_clock::advance_time(duration_type x) {
+size_t test_actor_clock::advance_time(timespan x) {
   CAF_LOG_TRACE(CAF_ARG(x) << CAF_ARG2("schedule.size", schedule_.size()));
   CAF_ASSERT(x.count() >= 0);
   current_time += x;
   return trigger_expired_timeouts();
 }
 
-} // namespace detail
 } // namespace caf

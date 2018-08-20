@@ -645,7 +645,7 @@ public:
   // -- timeout management -----------------------------------------------------
 
   /// Requests a new timeout and returns its ID.
-  uint64_t set_receive_timeout(actor_clock::time_point x);
+  uint64_t set_receive_timeout(timestamp x);
 
   /// Requests a new timeout for the current behavior and returns its ID.
   uint64_t set_receive_timeout();
@@ -657,7 +657,7 @@ public:
   bool is_active_receive_timeout(uint64_t tid) const;
 
   /// Requests a new timeout and returns its ID.
-  uint64_t set_stream_timeout(actor_clock::time_point x);
+  uint64_t set_stream_timeout(timestamp x);
 
   // -- message processing -----------------------------------------------------
 
@@ -830,7 +830,7 @@ public:
   // -- timeout management -----------------------------------------------------
 
   /// Requests a new timeout and returns its ID.
-  uint64_t set_timeout(atom_value type, actor_clock::time_point x);
+  uint64_t set_timeout(atom_value type, timestamp x);
 
   // -- stream processing ------------------------------------------------------
 
@@ -869,7 +869,7 @@ public:
 
   /// Advances credit and batch timeouts and returns the timestamp when to call
   /// this function again.
-  actor_clock::time_point advance_streams(actor_clock::time_point now);
+  timestamp advance_streams(timestamp now);
 
   /// @endcond
 
