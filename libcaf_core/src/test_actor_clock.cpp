@@ -52,7 +52,7 @@ bool test_actor_clock::trigger_timeout() {
   if (tout > current_time)
     current_time = tout;
   visit(f, i->second);
-  schedule_.erase(i);
+  erase_schedule_element(i);
   return true;
 }
 
@@ -80,7 +80,7 @@ size_t test_actor_clock::trigger_expired_timeouts() {
   while (i != schedule_.end() && i->first <= current_time) {
     ++result;
     visit(f, i->second);
-    i = schedule_.erase(i);
+    i = erase_schedule_element(i);
   }
   return result;
 }

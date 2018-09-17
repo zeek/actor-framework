@@ -28,7 +28,7 @@
 #include "caf/scheduler/worker.hpp"
 #include "caf/scheduler/abstract_coordinator.hpp"
 
-#include "caf/detail/thread_safe_actor_clock.hpp"
+#include "caf/detail/simple_actor_clock.hpp"
 
 namespace caf {
 namespace scheduler {
@@ -145,13 +145,13 @@ protected:
     policy_.central_enqueue(this, ptr);
   }
 
-  detail::thread_safe_actor_clock& clock() noexcept override {
+  detail::simple_actor_clock& clock() noexcept override {
     return clock_;
   }
 
 private:
   /// System-wide clock.
-  detail::thread_safe_actor_clock clock_;
+  detail::simple_actor_clock clock_;
 
   /// Set of workers.
   std::vector<std::unique_ptr<worker_type>> workers_;
