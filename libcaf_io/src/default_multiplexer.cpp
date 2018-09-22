@@ -712,7 +712,7 @@ default_multiplexer::new_datagram_servant_for_endpoint(native_socket fd,
   auto ds = new_datagram_servant(fd);
   ds->add_endpoint(ep, ds->hdl());
   return ds;
-};
+}
 
 expected<datagram_servant_ptr>
 default_multiplexer::new_remote_udp_endpoint(const std::string& host,
@@ -940,6 +940,20 @@ new_local_udp_endpoint_impl(uint16_t port, const char* addr, bool reuse,
   }
   CAF_LOG_DEBUG(CAF_ARG(fd));
   return std::make_pair(fd, proto);
+}
+
+expected<native_socket> accept_tcp_connection(native_socket sockfd) {
+  sockaddr_storage addr;
+  std::memset(&addr, 0, sizeof(addr));
+  socket_size_type addrlen = sizeof(addr);
+  auto result = ::accept(sockfd, reinterpret_cast<sockaddr*>(&addr),
+                         &addrlen);
+  if (result == invalid_native_socket) {
+    auto err = last_socket_error_as_string();
+    CAF_LOG_ERROR("cannot accept tcp connection: " << CAF_ARG(err));
+    return sec::runtime_error;
+  }
+  return result;
 }
 
 } // namespace network
