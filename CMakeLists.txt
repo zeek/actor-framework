@@ -1,4 +1,11 @@
-cmake_minimum_required(VERSION 3.4.0)
+if(WIN32)
+  # Auto-export all symbols on Windows, requires CMake 3.4.
+  cmake_minimum_required(VERSION 3.4)
+  set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+else()
+  cmake_minimum_required(VERSION 2.8.12)
+endif()
+
 project(caf C CXX)
 
 include(CheckCSourceCompiles)
@@ -10,11 +17,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 # Silence policy CMP0042 warning by enabling RPATH explicitly.
 if(APPLE AND NOT DEFINED CMAKE_MACOSX_RPATH)
   set(CMAKE_MACOSX_RPATH true)
-endif()
-
-# Auto-export all symbols from Windows DLL
-if(WIN32)
-  set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 endif()
 
 if(CAF_BUILD_STATIC_RUNTIME)
