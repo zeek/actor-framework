@@ -105,9 +105,7 @@ public:
   tuple_vals_impl(const tuple_vals_impl&) = default;
 
   template <class... Us>
-  tuple_vals_impl(Us&&... xs)
-      : data_(std::forward<Us>(xs)...),
-        types_{{tuple_vals_type_helper<Ts>::get()...}} {
+  tuple_vals_impl(Us&&... xs) : data_(std::forward<Us>(xs)...) {
     // nop
   }
 
@@ -206,8 +204,13 @@ private:
   }
 
   data_type data_;
-  std::array<rtti_pair, sizeof...(Ts)> types_;
+  static std::array<rtti_pair, sizeof...(Ts)> types_;
 };
+
+template <class Base, class... Ts>
+std::array<typename message_data::rtti_pair, sizeof...(Ts)>
+tuple_vals_impl<Base, Ts...>::types_{{tuple_vals_type_helper<Ts>::get()...}};
+
 
 template <class... Ts>
 class tuple_vals : public tuple_vals_impl<message_data, Ts...> {
