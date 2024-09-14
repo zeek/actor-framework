@@ -26,6 +26,7 @@
 #include "caf/flow/op/interval.hpp"
 #include "caf/flow/op/merge.hpp"
 #include "caf/flow/op/never.hpp"
+#include "caf/flow/op/on_backpressure_buffer.hpp"
 #include "caf/flow/op/prefix_and_tail.hpp"
 #include "caf/flow/op/publish.hpp"
 #include "caf/flow/step/all.hpp"
@@ -292,6 +293,13 @@ public:
     return add_step(step::do_finally<output_type, F>{std::move(f)});
   }
 
+  /// @copydoc observable::on_backpressure_buffer
+  auto on_backpressure_buffer(size_t buffer_size,
+                              backpressure_overflow_strategy strategy
+                              = backpressure_overflow_strategy::fail) {
+    return materialize().on_backpressure_buffer(buffer_size, strategy);
+  }
+
   auto on_error_complete() {
     return add_step(step::on_error_complete<output_type>{});
   }
@@ -554,6 +562,14 @@ transformation<step::on_error_complete<T>> observable<T>::on_error_complete() {
 }
 
 template <class T>
+observable<T>
+observable<T>::on_backpressure_buffer(size_t buffer_size,
+                                      backpressure_overflow_strategy strategy) {
+  using impl_t = op::on_backpressure_buffer<T>;
+  return make_observable<impl_t>(ctx(), *this, buffer_size, strategy);
+}
+
+template <class T>
 template <class Init, class Reducer>
 transformation<step::reduce<Reducer>>
 observable<T>::reduce(Init init, Reducer reducer) {
@@ -607,9 +623,9 @@ auto observable<T>::merge(Inputs&&... xs) {
     static_assert(
       sizeof...(Inputs) > 0,
       "merge without arguments expects this observable to emit observables");
-    static_assert(
-      (std::is_same_v<Out, output_type_t<std::decay_t<Inputs>>> && ...),
-      "can only merge observables with the same observed type");
+    static_assert((std::is_same_v<Out, output_type_t<std::decay_t<Inputs>>>
+                   && ...),
+                  "can only merge observables with the same observed type");
     using impl_t = op::merge<Out>;
     return make_observable<impl_t>(ctx(), *this, std::forward<Inputs>(xs)...);
   }

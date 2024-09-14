@@ -181,6 +181,8 @@ enum class sec : uint8_t {
   protocol_error,
   /// Subscribing to a stream failed because it can only be subscribed to once.
   cannot_resubscribe_stream,
+/// A downstream operator failed to process inputs on time.
+  backpressure_overflow,
 };
 // --(rst-sec-end)--
 
