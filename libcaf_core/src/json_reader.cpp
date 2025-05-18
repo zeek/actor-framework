@@ -162,14 +162,9 @@ bool json_reader::load(string_view json_text) {
   return true;
 }
 
-bool json_reader::load_file(const char* path) {
-  using iterator_t = std::istreambuf_iterator<char>;
+bool json_reader::load_from(std::istream& input) {
   reset();
-  std::ifstream input{path};
-  if (!input.is_open()) {
-    emplace_error(sec::cannot_open_file);
-    return false;
-  }
+  using iterator_t = std::istreambuf_iterator<char>;
   detail::json::file_parser_state ps{iterator_t{input}, iterator_t{}};
   root_ = detail::json::parse(ps, &buf_);
   if (ps.code != pec::success) {
@@ -183,6 +178,15 @@ bool json_reader::load_file(const char* path) {
   st_->reserve(16);
   st_->emplace_back(root_);
   return true;
+}
+
+bool json_reader::load_file(const char* path) {
+  std::ifstream input{path};
+  if (!input.is_open()) {
+    err_ = sec::cannot_open_file;
+    return false;
+  }
+  return load_from(input);
 }
 
 void json_reader::revert() {
@@ -312,8 +316,8 @@ bool json_reader::begin_field(string_view name, bool& is_present) {
   return true;
 }
 
-bool json_reader::begin_field(string_view name,
-                              span<const type_id_t> types, size_t& index) {
+bool json_reader::begin_field(string_view name, span<const type_id_t> types,
+                              size_t& index) {
   bool is_present = false;
   if (begin_field(name, is_present, types, index)) {
     if (is_present) {
@@ -633,7 +637,8 @@ bool json_reader::value(std::string& x) {
   FN_DECL;
   return consume<true>(fn, [this, &x](const detail::json::value& val) {
     if (val.data.index() == detail::json::value::string_index) {
-      detail::print_unescaped(x, std::get<string_view>(val.data));
+      auto str = std::get<string_view>(val.data);
+      x.assign(str.data(), str.size());
       return true;
     } else {
       emplace_error(sec::runtime_error, class_name, fn, current_field_name(),

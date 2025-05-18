@@ -9,6 +9,7 @@
 #include "caf/detail/json.hpp"
 #include "caf/string_view.hpp"
 
+#include <iosfwd>
 #include <variant>
 
 namespace caf {
@@ -132,6 +133,12 @@ public:
   ///          until either destroying this reader or calling `reset`.
   /// @note Implicitly calls `reset`.
   bool load(string_view json_text);
+
+  /// Reads the input stream @p input and parses the content into an internal
+  /// representation. After loading the JSON input, the reader is ready for
+  /// attempting to deserialize inspectable objects.
+  /// @note Implicitly calls `reset`.
+  bool load_from(std::istream& input);
 
   /// Parses the content of the file under the given @p path. After loading the
   /// content of the JSON file, the reader is ready for attempting to
