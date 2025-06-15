@@ -93,6 +93,7 @@ caf_add_component(
     src/binary_deserializer.cpp
     src/binary_serializer.cpp
     src/blocking_actor.cpp
+    src/chunk.cpp
     src/config_option.cpp
     src/config_option_adder.cpp
     src/config_option_set.cpp
