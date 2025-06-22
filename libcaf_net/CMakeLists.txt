@@ -41,6 +41,7 @@ caf_add_component(
     src/net/middleman.cpp
     src/net/middleman_backend.cpp
     src/net/packet_writer.cpp
+    src/net/web_socket/frame.cpp
     src/net/web_socket/handshake.cpp
     src/network_socket.cpp
     src/pipe_socket.cpp
