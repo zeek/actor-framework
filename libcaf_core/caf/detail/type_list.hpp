@@ -47,9 +47,8 @@ struct is_type_list<type_list<Ts...>> {
   static constexpr bool value = true;
 };
 
-// Uncomment after having switched to C++14
-// template <class T>
-// inline constexpr bool is_type_list_v = is_type_list<T>::value;
+template <class T>
+inline constexpr bool is_type_list_v = is_type_list<T>::value;
 
 // T head(type_list)
 
@@ -100,12 +99,8 @@ struct tl_size<type_list<Ts...>> {
   static constexpr size_t value = sizeof...(Ts);
 };
 
-template <class... Ts>
-constexpr size_t tl_size<type_list<Ts...>>::value;
-
-// Uncomment after having switched to C++14
-// template <class List>
-// inline constexpr size_t tl_size_v = tl_size<List>::value;
+template <class List>
+inline constexpr size_t tl_size_v = tl_size<List>::value;
 
 // T back(type_list)
 
@@ -141,9 +136,8 @@ struct tl_empty {
   static constexpr bool value = std::is_same<empty_type_list, List>::value;
 };
 
-// Uncomment after having switched to C++14
-// template <class List>
-// inline constexpr bool tl_empty_v = tl_empty<List>::value;
+template <class List>
+inline constexpr bool tl_empty_v = tl_empty<List>::value;
 
 // list slice(size_t, size_t)
 
@@ -321,10 +315,6 @@ struct tl_index_of<type_list<Ts...>, T> {
   static constexpr int value = tl_index_of_impl<0, T, Ts...>::value;
 };
 
-// Uncomment after having switched to C++14
-// template <class List, class T>
-// inline constexpr int tl_index_of_v = tl_index_of<List, T>::value;
-
 // int index_of(list, predicate)
 
 template <int Pos, template <class> class Pred, class... Ts>
@@ -349,10 +339,6 @@ template <class... Ts, template <class> class Pred>
 struct tl_index_where<type_list<Ts...>, Pred> {
   static constexpr int value = tl_index_where_impl<0, Pred, Ts...>::value;
 };
-
-// Uncomment after having switched to C++14
-// template <class List, template <class> class Pred>
-// inline constexpr int tl_index_where_v = tl_index_where<List, Pred>::value;
 
 // list reverse()
 
@@ -422,9 +408,8 @@ struct tl_forall<empty_type_list, Pred> {
   static constexpr bool value = true;
 };
 
-// Uncomment after having switched to C++14
-// template <class List, template <class> class Pred>
-// inline constexpr bool tl_forall_v = tl_forall<List, Pred>::value;
+template <class List, template <class> class Pred>
+inline constexpr bool tl_forall_v = tl_forall<List, Pred>::value;
 
 template <class ListA, class ListB, template <class, class> class Pred>
 struct tl_forall2_impl {
@@ -446,10 +431,9 @@ struct tl_binary_forall {
                                 && tl_forall2_impl<ListA, ListB, Pred>::value;
 };
 
-// Uncomment after having switched to C++14
-// template <class ListA, class ListB, template <class, class> class Pred>
-// inline constexpr bool tl_binary_forall_v
-//  = tl_binary_forall<ListA, ListB, Pred>::value;
+template <class ListA, class ListB, template <class, class> class Pred>
+inline constexpr bool tl_binary_forall_v
+ = tl_binary_forall<ListA, ListB, Pred>::value;
 
 /// Tests whether a predicate holds for some of the elements of a list.
 template <class List, template <class> class Pred>
@@ -463,9 +447,8 @@ struct tl_exists<empty_type_list, Pred> {
   static constexpr bool value = false;
 };
 
-// Uncomment after having switched to C++14
-// template <class List, template <class> class Pred>
-// inline constexpr bool tl_exists_v = tl_exists<List, Pred>::value;
+template <class List, template <class> class Pred>
+inline constexpr bool tl_exists_v = tl_exists<List, Pred>::value;
 
 // size_t count(predicate)
 
@@ -482,11 +465,7 @@ struct tl_count<empty_type_list, Pred> {
 };
 
 template <class List, template <class> class Pred>
-constexpr size_t tl_count<List, Pred>::value;
-
-// Uncomment after having switched to C++14
-// template <class List, template <class> class Pred>
-// inline constexpr size_t tl_count_v = tl_count<List, Pred>::value;
+inline constexpr size_t tl_count_v = tl_count<List, Pred>::value;
 
 // size_t count(type)
 
@@ -504,11 +483,7 @@ struct tl_count_type<empty_type_list, T> {
 };
 
 template <class List, class T>
-constexpr size_t tl_count_type<List, T>::value;
-
-// Uncomment after having switched to C++14
-// template <class List, class T>
-// inline constexpr size_t tl_count_type_v = tl_count_type<List, T>::value;
+inline constexpr size_t tl_count_type_v = tl_count_type<List, T>::value;
 
 // size_t count_not(predicate)
 
@@ -524,9 +499,8 @@ struct tl_count_not<empty_type_list, Pred> {
   static constexpr size_t value = 0;
 };
 
-// Uncomment after having switched to C++14
-// template <class List, template <class> class Pred>
-// inline constexpr size_t tl_count_not_v = tl_count_not<List, Pred>::value;
+template <class List, template <class> class Pred>
+inline constexpr size_t tl_count_not_v = tl_count_not<List, Pred>::value;
 
 template <class ListA, class ListB>
 struct tl_concat_impl;
@@ -835,9 +809,8 @@ struct tl_is_distinct {
                                 == tl_size<tl_distinct_t<List>>::value;
 };
 
-// Uncomment after having switched to C++14
-// template <class List>
-// inline constexpr bool tl_is_distinct_v = tl_is_distinct<List>::value;
+template <class List>
+inline constexpr bool tl_is_distinct_v = tl_is_distinct<List>::value;
 
 // list resize(list, size, fill_type)
 
@@ -908,9 +881,8 @@ struct tl_is_zipped {
   static constexpr bool value = tl_forall<List, is_type_pair>::value;
 };
 
-// Uncomment after having switched to C++14
-// template <class List>
-// inline constexpr bool tl_is_zipped_v = tl_is_zipped<List>::value;
+template <class List>
+inline constexpr bool tl_is_zipped_v = tl_is_zipped<List>::value;
 
 /// Removes trailing `What` elements from the end.
 template <class List, class What = unit_t>
@@ -1041,9 +1013,8 @@ template <class T, class... Ts, class X>
 struct tl_contains<type_list<T, Ts...>, X> : tl_contains<type_list<Ts...>, X> {
 };
 
-// Uncomment after having switched to C++14
-// template <class List, class X>
-// inline constexpr bool tl_contains_v = tl_contains<List, X>::value;
+template <class List, class X>
+inline constexpr bool tl_contains_v = tl_contains<List, X>::value;
 
 // subset_of(list, list)
 
@@ -1060,10 +1031,8 @@ template <class T, class... Ts, class List>
 struct tl_subset_of<type_list<T, Ts...>, List>
   : tl_subset_of<type_list<Ts...>, List, tl_contains<List, T>::value> {};
 
-// Uncomment after having switched to C++14
-// template <class ListA, class ListB, bool Fwd = true>
-// inline constexpr bool tl_subset_of_v = tl_subset_of<ListA, ListB,
-// Fwd>::value;
+template <class ListA, class ListB, bool Fwd = true>
+inline constexpr bool tl_subset_of_v = tl_subset_of<ListA, ListB, Fwd>::value;
 
 /// Tests whether ListA contains the same elements as ListB
 /// and vice versa. This comparison ignores element positions.
@@ -1073,9 +1042,8 @@ struct tl_equal {
                                 && tl_subset_of<ListB, ListA>::value;
 };
 
-// Uncomment after having switched to C++14
-// template <class ListA, class ListB>
-// inline constexpr bool tl_equal_v = tl_equal<ListA, ListB>::value;
+template <class ListA, class ListB>
+inline constexpr bool tl_equal_v = tl_equal<ListA, ListB>::value;
 
 template <size_t N, class T>
 struct tl_replicate {
