@@ -303,7 +303,7 @@ public:
   template <class... Ts>
   do_receive_helper do_receive(Ts&&... xs) {
     auto tup = std::make_tuple(std::forward<Ts>(xs)...);
-    auto cb = [=](receive_cond& rc) mutable {
+    auto cb = [this, tup](receive_cond& rc) mutable {
       varargs_tup_receive(rc, make_message_id(), tup);
     };
     return {cb};
@@ -358,7 +358,7 @@ public:
     // extract how many arguments are actually the behavior part,
     // i.e., neither `after(...) >> ...` nor `others >> ...`.
     using filtered =
-      typename tl_filter_not<type_list<typename std::decay<Ts>::type...>,
+      typename tl_filter_not<type_list<typename std::decay_t<Ts>...>,
                              is_timeout_or_catch_all>::type;
     filtered tk;
     behavior bhvr{apply_moved_args(make_behavior_impl, get_indices(tk), tup)};
