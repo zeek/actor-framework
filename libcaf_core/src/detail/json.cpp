@@ -667,6 +667,10 @@ const array* empty_array() noexcept {
   return &empty_array_instance;
 }
 
+bool operator==(const value& lhs, const value& rhs){
+  return lhs.data == rhs.data;
+}
+
 value* parse(string_parser_state& ps, monotonic_buffer_resource* storage) {
   unit_t scratch_space;
   parser::regular_unescaper unescaper;

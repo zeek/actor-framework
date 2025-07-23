@@ -317,6 +317,12 @@ inline string_view concat(std::initializer_list<string_view> xs,
   return concat(xs, &ptr->buf);
 }
 
+// Forward declaration
+class value;
+
+// Forward declaration of operator== for value
+bool operator==(const value& lhs, const value& rhs);
+
 class CAF_CORE_EXPORT value {
 public:
   using array = linked_list<value>;
@@ -416,9 +422,7 @@ public:
   }
 };
 
-inline bool operator==(const value& lhs, const value& rhs) {
-  return lhs.data == rhs.data;
-}
+bool operator==(const value& lhs, const value& rhs);
 
 inline bool operator!=(const value& lhs, const value& rhs) {
   return !(lhs == rhs);
