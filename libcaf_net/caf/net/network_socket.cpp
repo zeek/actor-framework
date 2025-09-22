@@ -43,7 +43,7 @@ uint16_t port_of(sockaddr& what) {
 
 namespace caf::net {
 
-#if defined(CAF_MACOS) || defined(CAF_IOS) || defined(CAF_BSD)
+#if defined(CAF_MACOS) || defined(CAF_IOS) || (defined(CAF_BSD) && !defined(__OpenBSD__))
 #  define CAF_HAS_NOSIGPIPE_SOCKET_FLAG
 #endif
 
