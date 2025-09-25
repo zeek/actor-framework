@@ -81,8 +81,9 @@ const int ec_interrupted_syscall = EINTR;
 #endif
 
 // Platform-dependent setup for suppressing SIGPIPE.
-#if defined(CAF_MACOS) || defined(CAF_IOS) || defined(__FreeBSD__)
-// Set the SO_NOSIGPIPE socket option on macOS, iOS and FreeBSD.
+#if defined(CAF_MACOS) || defined(CAF_IOS)                                     \
+  || (defined(CAF_BSD) && defined(SO_NOSIGPIPE))
+// Set the SO_NOSIGPIPE socket option on macOS, iOS, FreeBSD and NetBSD.
 const int no_sigpipe_socket_flag = SO_NOSIGPIPE;
 const int no_sigpipe_io_flag = 0;
 #elif defined(CAF_WINDOWS)
