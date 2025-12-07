@@ -1,6 +1,6 @@
 // This file is part of CAF, the C++ Actor Framework. See the file LICENSE in
 // the main distribution directory for license terms and copyright or visit
-// https://github.com/actor-framework/actor-framework/blob/master/LICENSE.
+// https://github.com/actor-framework/actor-framework/blob/main/LICENSE.
 
 #pragma once
 
@@ -32,7 +32,8 @@ public:
     }
 
     template <class ErrorPolicy, class TimePoint>
-    read_result pull(ErrorPolicy policy, T& item, TimePoint timeout) {
+    read_result
+    pull(ErrorPolicy policy, T& item, [[maybe_unused]] TimePoint timeout) {
       if (!buf_) {
         return abort_reason_ ? read_result::abort : read_result::stop;
       }
@@ -45,6 +46,7 @@ public:
           return read_result::try_again_later;
       }
       auto [again, n] = buf_->pull_unsafe(guard, policy, 1u, *this);
+      guard.unlock();
       if (!again) {
         buf_ = nullptr;
       }
@@ -67,6 +69,7 @@ public:
     }
 
     void on_complete() {
+      // nop
     }
 
     void on_error(const caf::error& abort_reason) {
@@ -137,8 +140,7 @@ public:
 
   /// Fetches the next item. If there is no item available, this functions
   /// blocks unconditionally.
-  /// @param policy Either @ref instant_error, @ref delay_error or
-  ///               @ref ignore_errors.
+  /// @param policy Either @ref delay_errors_t or @ref prioritize_errors_t.
   /// @param item Output parameter for storing the received item.
   /// @returns the status of the read operation. The function writes to `item`
   ///          only when also returning `read_result::ok`.
@@ -149,8 +151,7 @@ public:
 
   /// Fetches the next item. If there is no item available, this functions
   /// blocks until the absolute timeout was reached.
-  /// @param policy Either @ref instant_error, @ref delay_error or
-  ///               @ref ignore_errors.
+  /// @param policy Either @ref delay_errors_t or @ref prioritize_errors_t.
   /// @param item Output parameter for storing the received item.
   /// @param timeout Absolute timeout for the receive operation.
   /// @returns the status of the read operation. The function writes to `item`
@@ -164,8 +165,7 @@ public:
 
   /// Fetches the next item. If there is no item available, this functions
   /// blocks until the relative timeout was reached.
-  /// @param policy Either @ref instant_error, @ref delay_error or
-  ///               @ref ignore_errors.
+  /// @param policy Either @ref delay_errors_t or @ref prioritize_errors_t.
   /// @param item Output parameter for storing the received item.
   /// @param timeout Maximum duration before returning from the function.
   /// @returns the status of the read operation. The function writes to `item`
@@ -178,7 +178,7 @@ public:
   }
 
   error abort_reason() const {
-    impl_->abort_reason();
+    return impl_->abort_reason();
   }
 
 private:
