@@ -133,11 +133,17 @@ bool probe(socket x) {
   }
 }
 
-error child_process_inherit(socket x, bool) {
-  // TODO: possible to implement via SetHandleInformation?
+error child_process_inherit(socket x, bool new_value) {
   if (x == invalid_socket)
-    return make_error(sec::network_syscall_failed, "ioctlsocket",
+    return make_error(sec::network_syscall_failed, "SetHandleInformation",
                       "invalid socket");
+  DWORD flags = new_value ? HANDLE_FLAG_INHERIT : 0;
+  if (!SetHandleInformation(reinterpret_cast<HANDLE>(x.id),
+                            HANDLE_FLAG_INHERIT, flags)) {
+    // Non-critical: log but don't fail. Some socket types may not
+    // support SetHandleInformation.
+    return none;
+  }
   return none;
 }
 
