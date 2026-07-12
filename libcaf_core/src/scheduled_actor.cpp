@@ -525,10 +525,10 @@ scheduled_actor::categorize(mailbox_element& x) {
       CAF_LOG_WARNING("received anonymous ('get', 'sys', $key) message");
       return message_category::internal;
     }
-    auto& what = content.get_as<std::string>(2);
+    const auto& what = content.get_as<std::string>(2);
     if (what == "info") {
       CAF_LOG_DEBUG("reply to 'info' message");
-      rp.deliver(ok_atom_v, std::move(what), strong_actor_ptr{ctrl()}, name());
+      rp.deliver(ok_atom_v, what, strong_actor_ptr{ctrl()}, name());
     } else {
       rp.deliver(make_error(sec::unsupported_sys_key));
     }
