@@ -82,16 +82,16 @@ endif()
 # some properties predefined in order to force compiler flags or dependencies.
 if(NOT TARGET caf_internal)
   add_library(caf_internal INTERFACE)
-endif()
 
-if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-  target_compile_options(caf_internal INTERFACE -Wall -Wextra -pedantic
-                         -ftemplate-depth=512 -ftemplate-backtrace-limit=0)
-  if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    target_compile_options(caf_internal INTERFACE -Wdocumentation)
-  else()
-    target_compile_options(caf_internal INTERFACE
-                           -Wno-missing-field-initializers)
+  if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+    target_compile_options(caf_internal INTERFACE -Wall -Wextra -pedantic
+                           -ftemplate-depth=512 -ftemplate-backtrace-limit=0)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+      target_compile_options(caf_internal INTERFACE -Wdocumentation)
+    else()
+      target_compile_options(caf_internal INTERFACE
+                             -Wno-missing-field-initializers)
+    endif()
   endif()
 endif()
 
